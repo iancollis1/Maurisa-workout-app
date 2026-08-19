@@ -548,6 +548,15 @@ const TRIM_PRIORITY = { Burn: 0, Define: 1, Shape: 2, Foundation: 3 }; // lower 
 const ADD_SET_PRIORITY = { Burn: 0, Define: 1, Shape: 2, Foundation: 3 }; // lower = gets extra sets first when there's slack
 const MAX_EXTRA_SETS = { Burn: 3, Define: 3, Shape: 3, Foundation: 2 }; // cap on bonus sets per exercise, so longer sessions don't pile fatiguing volume onto Foundation lifts
 
+// The Burn-tier cardio finisher's round count follows this fixed curve
+// instead of competing in the generic trim/grow logic above (see the
+// override at the end of computeSessionPlan). It's applied as a pure
+// after-the-fact patch specifically so Foundation/Shape/Define's own
+// budget math runs completely untouched by Burn's presence either way —
+// Burn's volume is additive on top of whatever they already computed,
+// never traded against it.
+const BURN_ROUND_CURVE = { 30: 1, 45: 1, 60: 2, 75: 2, 90: 3, 105: 3, 120: 3 };
+
 function perSetSeconds(cat) { return WORK_SECONDS_PER_SET + (REST_BY_CAT[cat] || 0); }
 function estimateExerciseSeconds(ex) { return ex.sets * perSetSeconds(ex.cat); }
 
@@ -682,7 +691,12 @@ function computeSessionPlan(dayKey) {
       }
     }
 
-    extraSetsAdded = plan.reduce((sum, e) => sum + e.extra, 0);
+    // Burn's own `extra` here reflects the generic growTo run above, not
+    // the fixed curve it actually ends up displaying (applied below) — left
+    // in, that phantom growth would inflate the "+N extra sets added" note
+    // text with sets the day's blocks don't actually show. Excluded here so
+    // the note stays honest about Foundation/Shape/Define specifically.
+    extraSetsAdded = plan.reduce((sum, e) => sum + (e.ex.cat === 'Burn' ? 0 : e.extra), 0);
 
     // 120 min: both bonus exercises grow from their base sets to +1
     const bonus1Sets = bonus1 ? (sessionLengthMinutes >= 120 ? bonus1.sets + 1 : bonus1.sets) : 0;
@@ -701,6 +715,28 @@ function computeSessionPlan(dayKey) {
   positioned.sort((a, b) => a.idx - b.idx);
   const trailing = normalEntries.filter(e => e.idx === null);
   let entries = [...positioned, ...trailing].map(e => ({ ex: e.ex, sets: e.sets }));
+
+  // Burn-tier round count override (see BURN_ROUND_CURVE): runs last, after
+  // Foundation/Shape/Define are fully decided, so it can only ever add to
+  // the day's total volume, never take budget from them. Handles both
+  // outcomes above: if the trim branch dropped Burn (no floor on it), it's
+  // re-added here; if the grow branch left it untouched or grew it, its
+  // count is corrected to the curve's value regardless.
+  const burnTarget = BURN_ROUND_CURVE[sessionLengthMinutes];
+  day.exercises.forEach(ex => {
+    if (ex.cat !== 'Burn') return;
+    const existing = entries.find(e => e.ex === ex);
+    if (existing) {
+      existing.sets = burnTarget;
+    } else {
+      // dropped by the trim branch; Burn is always the last base exercise
+      // in day.exercises (before bonus/bonus2), so appending here preserves
+      // correct render order without needing to re-derive its position
+      entries.push({ ex, sets: burnTarget });
+    }
+    const hiddenIdx = hiddenNames.indexOf(ex.name);
+    if (hiddenIdx !== -1) hiddenNames.splice(hiddenIdx, 1);
+  });
 
   return { entries, hiddenNames, extraSetsAdded, bonusAdded };
 }
