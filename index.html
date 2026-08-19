@@ -376,17 +376,17 @@ const DAYS = {
     fullTitle: "Full Body: Arms & Back Focus",
     exercises: [
       { name: "Warm-Up Cardio", type: "cardio", sets: 1, cat: "warmup", durationRange: [5,8], durationUnit: "min", customScaling: { 30: 1, 45: 1, 60: 1, 75: 1, 90: 1, 105: 1, 120: 1 } },
-      { name: "DB Bent-Over Row", sets: 4, repRange: [12,15], cat: "Foundation" },
-      { name: "Push-Up or Incline DB Press", sets: 4, repRange: [12,15], cat: "Foundation" },
-      { name: "Cable Tricep Pushdown", sets: 4, repRange: [15,20], cat: "Shape" },
-      { name: "DB Bicep Curl", sets: 4, repRange: [15,20], cat: "Shape" },
+      { name: "Chest-Supported DB Row", sets: 4, repRange: [12,15], cat: "Foundation" },
+      { name: "Incline DB Press", sets: 4, repRange: [12,15], cat: "Foundation" },
+      { name: "Overhead Rope Extension", sets: 4, repRange: [15,20], cat: "Shape" },
+      { name: "Incline Bench DB Curl", sets: 4, repRange: [15,20], cat: "Shape" },
       { name: "Lat Pulldown", sets: 3, repRange: [15,20], cat: "Define" },
       { name: "Stairmaster Interval / Mountain Climbers", type: "cardio", sets: 2, cat: "Burn", durationRange: [45,90], durationUnit: "sec" }
     ],
     bonus: { name: "Reverse Cable Flye", sets: 3, repRange: [15,20], cat: "Define" },
     extended: {
       isolationBumps: ["Lat Pulldown", "Reverse Cable Flye"],
-      moderateBump: "Cable Tricep Pushdown",
+      moderateBump: "Overhead Rope Extension",
       bonus2: { name: "Seated Cable Row", sets: 3, repRange: [15,20], cat: "Shape" }
     }
   },
@@ -398,13 +398,13 @@ const DAYS = {
       { name: "Walking Lunge", sets: 4, repRange: [12,15], cat: "Foundation", repNote: "/leg" },
       { name: "Leg Press", sets: 4, repRange: [12,15], cat: "Foundation" },
       { name: "Cable Pull-Through", sets: 4, repRange: [15,20], cat: "Shape", minSets: 2 },
-      { name: "Standing Calf Raise", sets: 4, repRange: [15,20], cat: "Shape" },
-      { name: "Dead Bug", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side", minSets: 2 },
+      { name: "Seated / Rotary Calf Raise", sets: 4, repRange: [15,20], cat: "Shape" },
+      { name: "Pallof Press", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side", minSets: 2 },
       { name: "Stairmaster Interval / Jump Squats", type: "cardio", sets: 2, cat: "Burn", durationRange: [45,90], durationUnit: "sec" }
     ],
     bonus: { name: "Glute Bridge Hold", sets: 3, repRange: [20,30], cat: "Define", repUnit: "sec hold" },
     extended: {
-      isolationBumps: ["Dead Bug", "Glute Bridge Hold"],
+      isolationBumps: ["Pallof Press", "Glute Bridge Hold"],
       moderateBump: "Cable Pull-Through",
       bonus2: { name: "Bulgarian Split Squat", sets: 3, repRange: [12,15], cat: "Shape", repNote: "/leg" }
     }
@@ -431,10 +431,10 @@ const EXERCISE_INFO = {
   "Stairmaster Interval / Bicycle Crunches": { muscles: "Cardio / lower body (stairmaster) or core (bicycle crunches)", cue: "Push the pace for the interval, then recover fully — switch to bicycle crunches if the machine's busy." },
   "Cable Woodchopper": { muscles: "Obliques, core rotation", cue: "Rotate from your ribcage, not just your arms — keep hips relatively square." },
   "DB Hip Thrust": { muscles: "Glutes, hamstrings", cue: "Drive through your heels, pause and squeeze glutes hard at the top, ribs down." },
-  "DB Bent-Over Row": { muscles: "Mid-back, lats, rear delts", cue: "Hinge with a flat back, pull elbows back and slightly up — squeeze shoulder blades together." },
-  "Push-Up or Incline DB Press": { muscles: "Chest, front delts, triceps", cue: "Lower slowly for a 3-count, keep core braced so your hips don't sag." },
-  "Cable Tricep Pushdown": { muscles: "Triceps", cue: "Elbows pinned to your sides — control the release back up, don't let the stack drop." },
-  "DB Bicep Curl": { muscles: "Biceps", cue: "No swinging — curl slow, squeeze at the top, lower for a full 3-count." },
+  "Chest-Supported DB Row": { muscles: "Mid-back, lats, rear delts", cue: "Chest pressed into the incline bench the whole set — pull elbows back and slightly up, squeeze shoulder blades together, no momentum from your legs." },
+  "Incline DB Press": { muscles: "Upper chest, front delts, triceps", cue: "Lower slowly for a 3-count, press up with control — keep core braced so your hips don't sag.", note: "No bench available? Sub in push-ups instead — same tempo and rep target, hands slightly wider than shoulder-width." },
+  "Overhead Rope Extension": { muscles: "Triceps (long head)", cue: "Elbows stay pinned by your ears — lower the rope slow behind your head, then press up with control, no jerking." },
+  "Incline Bench DB Curl": { muscles: "Biceps (long head, deep stretch emphasis)", cue: "Let your arms hang fully behind your torso at the bottom, curl slow, squeeze at the top — no swinging." },
   "Lat Pulldown": { muscles: "Lats, mid-back", cue: "Lead with your elbows down and back, chest lifted — avoid leaning back excessively." },
   "Stairmaster Interval / Mountain Climbers": { muscles: "Cardio / core &amp; shoulder stability (mountain climbers)", cue: "Keep hips low and core tight through the whole interval push." },
   "Reverse Cable Flye": { muscles: "Rear delts, upper back", cue: "Soft elbow bend, squeeze shoulder blades together at the end range, control the return." },
@@ -442,8 +442,8 @@ const EXERCISE_INFO = {
   "Walking Lunge": { muscles: "Quads, glutes, balance/core", cue: "Step and lower slow and controlled until both knees hit ~90°, drive through the front heel." },
   "Leg Press": { muscles: "Quads, glutes", cue: "Lower slow until knees reach 90° — don't let your lower back round off the pad." },
   "Cable Pull-Through": { muscles: "Glutes, hamstrings", cue: "Hinge at the hips with a neutral spine, squeeze glutes hard to stand tall." },
-  "Standing Calf Raise": { muscles: "Calves", cue: "Full stretch at the bottom, pause and squeeze at the top — slow tempo, no bouncing." },
-  "Dead Bug": { muscles: "Deep core (transverse abdominis)", cue: "Press your low back into the floor the whole time — only move as far as you can control." },
+  "Seated / Rotary Calf Raise": { muscles: "Calves (soleus emphasis, seated machine)", cue: "Knees stay bent through the range so the seated position isolates the soleus — pause and squeeze at the top, no bouncing." },
+  "Pallof Press": { muscles: "Core (anti-rotation, obliques/transverse abdominis)", cue: "Press straight out and hold for a slow 2-count, resisting the cable's pull to rotate you — hips and shoulders stay square." },
   "Stairmaster Interval / Jump Squats": { muscles: "Cardio / lower body power (jump squats)", cue: "Land soft with bent knees on jump squats; keep the stairmaster pace honest, not just fast." },
   "Glute Bridge Hold": { muscles: "Glutes, core", cue: "Squeeze glutes and hold — ribs down, no arching through the lower back." },
   "Bulgarian Split Squat": { muscles: "Quads, glutes, balance", cue: "Torso slightly forward, lower slow and controlled, front knee tracks over the toes." }
