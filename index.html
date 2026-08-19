@@ -362,12 +362,11 @@ const DAYS = {
       { name: "Cable Glute Kickback", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg", minSets: 2 },
       { name: "Standing Band Hip Abduction", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg", minSets: 2 },
       { name: "Plank with Shoulder Tap", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side", minSets: 2 },
+      { name: "Frog Pump", sets: 3, repRange: [15,20], cat: "Define", minSets: 2 },
       { name: "Stairmaster Interval / Bicycle Crunches", type: "cardio", sets: 2, cat: "Burn", durationRange: [45,90], durationUnit: "sec" }
     ],
     bonus: { name: "Cable Woodchopper", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side" },
     extended: {
-      isolationBumps: ["Plank with Shoulder Tap", "Cable Woodchopper"],
-      moderateBump: "Cable Glute Kickback",
       bonus2: { name: "DB Hip Thrust", sets: 3, repRange: [15,20], cat: "Shape" }
     }
   },
@@ -385,8 +384,6 @@ const DAYS = {
     ],
     bonus: { name: "Reverse Cable Flye", sets: 3, repRange: [15,20], cat: "Define" },
     extended: {
-      isolationBumps: ["Lat Pulldown", "Reverse Cable Flye"],
-      moderateBump: "Overhead Rope Extension",
       bonus2: { name: "Seated Cable Row", sets: 3, repRange: [15,20], cat: "Shape" }
     }
   },
@@ -397,15 +394,14 @@ const DAYS = {
       { name: "Warm-Up Cardio", type: "cardio", sets: 1, cat: "warmup", durationRange: [5,8], durationUnit: "min", customScaling: { 30: 1, 45: 1, 60: 1, 75: 1, 90: 1, 105: 1, 120: 1 } },
       { name: "Walking Lunge", sets: 4, repRange: [12,15], cat: "Foundation", repNote: "/leg" },
       { name: "Leg Press", sets: 4, repRange: [12,15], cat: "Foundation" },
+      { name: "Barbell Hip Thrust", sets: 4, repRange: [12,15], cat: "Foundation", minSets: 2 },
       { name: "Cable Pull-Through", sets: 4, repRange: [15,20], cat: "Shape", minSets: 2 },
-      { name: "Seated / Rotary Calf Raise", sets: 4, repRange: [15,20], cat: "Shape" },
+      { name: "Curtsy Lunge", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg" },
       { name: "Pallof Press", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side", minSets: 2 },
       { name: "Stairmaster Interval / Jump Squats", type: "cardio", sets: 2, cat: "Burn", durationRange: [45,90], durationUnit: "sec" }
     ],
     bonus: { name: "Glute Bridge Hold", sets: 3, repRange: [20,30], cat: "Define", repUnit: "sec hold" },
     extended: {
-      isolationBumps: ["Pallof Press", "Glute Bridge Hold"],
-      moderateBump: "Cable Pull-Through",
       bonus2: { name: "Bulgarian Split Squat", sets: 3, repRange: [12,15], cat: "Shape", repNote: "/leg" }
     }
   }
@@ -428,6 +424,7 @@ const EXERCISE_INFO = {
   "Cable Glute Kickback": { muscles: "Glutes (max activation)", cue: "Small controlled range — squeeze the glute hard for a full second at the top before lowering." },
   "Standing Band Hip Abduction": { muscles: "Glute medius, hip stabilizers", cue: "Stand tall and brace your core — lift the leg out to the side without leaning your torso away." },
   "Plank with Shoulder Tap": { muscles: "Core (anti-rotation), shoulders", cue: "Keep hips dead still — widen your stance if they rock side to side." },
+  "Frog Pump": { muscles: "Glute max/medius, adductors", cue: "Soles of feet together, knees out — small pulses driven entirely by the glutes, not the lower back." },
   "Stairmaster Interval / Bicycle Crunches": { muscles: "Cardio / lower body (stairmaster) or core (bicycle crunches)", cue: "Push the pace for the interval, then recover fully — switch to bicycle crunches if the machine's busy." },
   "Cable Woodchopper": { muscles: "Obliques, core rotation", cue: "Rotate from your ribcage, not just your arms — keep hips relatively square." },
   "DB Hip Thrust": { muscles: "Glutes, hamstrings", cue: "Drive through your heels, pause and squeeze glutes hard at the top, ribs down." },
@@ -442,7 +439,8 @@ const EXERCISE_INFO = {
   "Walking Lunge": { muscles: "Quads, glutes, balance/core", cue: "Step and lower slow and controlled until both knees hit ~90°, drive through the front heel." },
   "Leg Press": { muscles: "Quads, glutes", cue: "Lower slow until knees reach 90° — don't let your lower back round off the pad." },
   "Cable Pull-Through": { muscles: "Glutes, hamstrings", cue: "Hinge at the hips with a neutral spine, squeeze glutes hard to stand tall." },
-  "Seated / Rotary Calf Raise": { muscles: "Calves (soleus emphasis, seated machine)", cue: "Knees stay bent through the range so the seated position isolates the soleus — pause and squeeze at the top, no bouncing." },
+  "Barbell Hip Thrust": { muscles: "Glutes (primary driver)", cue: "Drive through heels, pause and squeeze hard at the top for a full second before lowering slow." },
+  "Curtsy Lunge": { muscles: "Glute medius/minimus (stabilizer emphasis), quads", cue: "Step back and across slowly, control the descent — this is about hip stability, not knee drive." },
   "Pallof Press": { muscles: "Core (anti-rotation, obliques/transverse abdominis)", cue: "Press straight out and hold for a slow 2-count, resisting the cable's pull to rotate you — hips and shoulders stay square." },
   "Stairmaster Interval / Jump Squats": { muscles: "Cardio / lower body power (jump squats)", cue: "Land soft with bent knees on jump squats; keep the stairmaster pace honest, not just fast." },
   "Glute Bridge Hold": { muscles: "Glutes, core", cue: "Squeeze glutes and hold — ribs down, no arching through the lower back." },
@@ -545,8 +543,15 @@ let showAllExercises = false; // per-day override to ignore the time-budget trim
 
 const WORK_SECONDS_PER_SET = 40; // rough time to perform one set, used only to estimate exercise duration
 const TRIM_PRIORITY = { Burn: 0, Define: 1, Shape: 2, Foundation: 3 }; // lower = dropped first when shrinking; Foundation is never dropped
-const ADD_SET_PRIORITY = { Burn: 0, Define: 1, Shape: 2, Foundation: 3 }; // lower = gets extra sets first when there's slack
-const MAX_EXTRA_SETS = { Burn: 3, Define: 3, Shape: 3, Foundation: 2 }; // cap on bonus sets per exercise, so longer sessions don't pile fatiguing volume onto Foundation lifts
+
+// Hard per-exercise set cap for Foundation/Shape/Define — every base exercise
+// in DAYS is already defined at exactly its tier's cap, so sessions never add
+// more sets to an existing exercise once there's slack budget. Instead, once
+// a tier's base exercises are all sitting at cap, extra budget for that tier
+// routes into a bonus/secondary exercise (day.bonus for Define,
+// day.extended.bonus2 for Shape) — see the grow branch below. Burn is
+// unrelated to this cap; its own volume follows BURN_ROUND_CURVE.
+const SET_CAP = { Foundation: 4, Shape: 4, Define: 3 };
 
 // The Burn-tier cardio finisher's round count follows this fixed curve
 // instead of competing in the generic trim/grow logic above (see the
@@ -578,10 +583,12 @@ async function saveSessionLength() {
 //     (Burn first, then Define, then Shape; Foundation is never dropped —
 //     and any exercise with minSets is stepped down to its floor instead
 //     of being dropped outright, so core/glute work never disappears)
-//   - at or under budget already, with room to spare: grow by adding extra
-//     sets to existing exercises first (Burn/Define get extra sets more
-//     readily since they're cheaper to recover from), then add the day's
-//     bonus exercise if it still fits, then extend further at 90/105/120
+//   - at or under budget already, with room to spare: Foundation/Shape/
+//     Define exercises never gain sets beyond their base count (every base
+//     exercise is already defined at its tier's SET_CAP) — instead, once a
+//     tier's base list is fully at cap, extra budget for that tier goes
+//     toward a bonus/secondary exercise (day.bonus for Define, bonus2 for
+//     Shape), added as soon as it fits rather than gated to a fixed band
 function computeSessionPlan(dayKey) {
   const day = DAYS[dayKey];
   const budgetSeconds = sessionLengthMinutes * 60;
@@ -631,31 +638,13 @@ function computeSessionPlan(dayKey) {
     normalEntries = state;
     hiddenNames = hidden.map(idx => day.exercises[idx].name);
   } else {
-    // room to spare: grow sets on the base list first, capped per category.
-    // Run in two phases so Foundation lifts can never grow past whatever the
-    // 60-minute budget alone would give them, then let non-Foundation
-    // categories use any real headroom past 60 minutes.
-    const plan = normal.map(e => ({ ex: e.ex, idx: e.idx, extra: 0 }));
+    // room to spare: base exercises stay at their (already-at-cap) set
+    // count — no further growth. Instead, whatever budget is left over
+    // goes toward the day's bonus/secondary exercises, added as soon as
+    // each fits: bonus1 (Define-tier) first, then bonus2 (Shape-tier).
+    // Burn is untouched here — see the fixed-curve override below.
     let total = baseTotal;
-    const budget60 = Math.min(budgetSeconds, 60 * 60);
-    function growTo(maxBudget, excludeFoundation) {
-      for (;;) {
-        const candidates = plan
-          .filter(e => e.extra < (MAX_EXTRA_SETS[e.ex.cat] ?? 0))
-          .filter(e => !excludeFoundation || e.ex.cat !== 'Foundation')
-          .sort((a, b) => ADD_SET_PRIORITY[a.ex.cat] - ADD_SET_PRIORITY[b.ex.cat]);
-        const next = candidates[0];
-        if (!next) break;
-        const addSeconds = perSetSeconds(next.ex.cat);
-        if (total + addSeconds > maxBudget) break;
-        next.extra += 1;
-        total += addSeconds;
-      }
-    }
-    growTo(budget60, false);
-    growTo(budgetSeconds, true);
 
-    // then add the day's (first) bonus exercise if there's still room for it
     let bonus1Added = null;
     const bonus1 = day.bonus;
     if (bonus1) {
@@ -663,48 +652,22 @@ function computeSessionPlan(dayKey) {
       if (total + bonus1Seconds <= budgetSeconds) { bonus1Added = bonus1.name; total += bonus1Seconds; }
     }
 
-    // 90/105 min: fixed per-day content beyond the normal per-category cap -
-    // two named exercises get +1 set at 90m and another +1 at 105m (cumulative),
-    // one named exercise gets +1 at 105m, and a second bonus exercise appears
-    // at 90m. This is deliberately a fixed schedule, not a budget-fit search,
-    // since by these bands every day has generous slack past its base+bonus1 total.
-    const ext = day.extended;
     let bonus2Added = null;
-    if (ext) {
-      if (sessionLengthMinutes >= 90) {
-        for (const name of ext.isolationBumps) {
-          const item = plan.find(e => e.ex.name === name);
-          if (item) { item.extra += 1; total += perSetSeconds(item.ex.cat); }
-        }
-        if (ext.bonus2) {
-          const bonus2Seconds = estimateExerciseSeconds(ext.bonus2);
-          if (total + bonus2Seconds <= budgetSeconds) { bonus2Added = ext.bonus2.name; total += bonus2Seconds; }
-        }
-      }
-      if (sessionLengthMinutes >= 105) {
-        for (const name of ext.isolationBumps) {
-          const item = plan.find(e => e.ex.name === name);
-          if (item) { item.extra += 1; total += perSetSeconds(item.ex.cat); }
-        }
-        const modItem = plan.find(e => e.ex.name === ext.moderateBump);
-        if (modItem) { modItem.extra += 1; total += perSetSeconds(modItem.ex.cat); }
-      }
+    const bonus2 = day.extended && day.extended.bonus2;
+    if (bonus2) {
+      const bonus2Seconds = estimateExerciseSeconds(bonus2);
+      if (total + bonus2Seconds <= budgetSeconds) { bonus2Added = bonus2.name; total += bonus2Seconds; }
     }
 
-    // Burn's own `extra` here reflects the generic growTo run above, not
-    // the fixed curve it actually ends up displaying (applied below) — left
-    // in, that phantom growth would inflate the "+N extra sets added" note
-    // text with sets the day's blocks don't actually show. Excluded here so
-    // the note stays honest about Foundation/Shape/Define specifically.
-    extraSetsAdded = plan.reduce((sum, e) => sum + (e.ex.cat === 'Burn' ? 0 : e.extra), 0);
+    // 120 min: bonus/secondary exercises grow by one set, clamped to their
+    // own tier's cap — a no-op for a Define-tier bonus1 (already at cap 3),
+    // one more set for a Shape-tier bonus2 (3 -> 4, exactly at cap)
+    const bonus1Sets = bonus1 ? Math.min(bonus1.sets + (sessionLengthMinutes >= 120 ? 1 : 0), SET_CAP[bonus1.cat] ?? Infinity) : 0;
+    const bonus2Sets = bonus2 ? Math.min(bonus2.sets + (sessionLengthMinutes >= 120 ? 1 : 0), SET_CAP[bonus2.cat] ?? Infinity) : 0;
 
-    // 120 min: both bonus exercises grow from their base sets to +1
-    const bonus1Sets = bonus1 ? (sessionLengthMinutes >= 120 ? bonus1.sets + 1 : bonus1.sets) : 0;
-    const bonus2Sets = ext && ext.bonus2 ? (sessionLengthMinutes >= 120 ? ext.bonus2.sets + 1 : ext.bonus2.sets) : 0;
-
-    normalEntries = plan.map(e => ({ ex: e.ex, idx: e.idx, sets: e.ex.sets + e.extra }));
+    normalEntries = normal.map(e => ({ ex: e.ex, idx: e.idx, sets: e.ex.sets }));
     if (bonus1Added) normalEntries.push({ ex: bonus1, idx: null, sets: bonus1Sets });
-    if (bonus2Added) normalEntries.push({ ex: ext.bonus2, idx: null, sets: bonus2Sets });
+    if (bonus2Added) normalEntries.push({ ex: bonus2, idx: null, sets: bonus2Sets });
     bonusAdded = [bonus1Added, bonus2Added].filter(Boolean);
   }
 
