@@ -369,7 +369,7 @@ const DAYS = {
       { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
     ],
     extended: {
-      bonus2: { name: "Cable Chest Fly", sets: 3, repRange: [15,20], cat: "Shape" }
+      bonus2: { name: "Cable Chest Fly", sets: 3, repRange: [15,20], cat: "Shape", minSessionLength: 75 }
     }
   },
   upperB: {
@@ -384,7 +384,7 @@ const DAYS = {
       { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
     ],
     extended: {
-      bonus2: { name: "Face Pull", sets: 3, repRange: [15,20], cat: "Shape" }
+      bonus2: { name: "Face Pull", sets: 3, repRange: [15,20], cat: "Shape", minSessionLength: 75 }
     }
   },
   lowerA: {
@@ -399,7 +399,7 @@ const DAYS = {
       { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
     ],
     extended: {
-      bonus2: { name: "Single-Leg RDL", sets: 3, repRange: [15,20], cat: "Shape", repNote: "/leg" }
+      bonus2: { name: "Single-Leg RDL", sets: 3, repRange: [15,20], cat: "Shape", repNote: "/leg", minSessionLength: 75 }
     }
   },
   lowerB: {
@@ -416,7 +416,7 @@ const DAYS = {
       { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
     ],
     extended: {
-      bonus2: { name: "Bulgarian Split Squat", sets: 3, repRange: [12,15], cat: "Shape", repNote: "/leg" }
+      bonus2: { name: "Bulgarian Split Squat", sets: 3, repRange: [12,15], cat: "Shape", repNote: "/leg", minSessionLength: 75 }
     }
   }
 };
@@ -651,6 +651,12 @@ function computeSessionPlan(dayKey) {
     // count — no further growth. Instead, whatever budget is left over
     // goes toward the day's bonus/secondary exercises, added as soon as
     // each fits: bonus1 (Define-tier) first, then bonus2 (Shape-tier).
+    // bonus2 additionally respects its own minSessionLength (set to 75 on
+    // all four current bonus2 exercises) so it's reserved for longer
+    // sessions specifically, not just gated on Shape having hit cap —
+    // without this, bonus2 could appear as early as 45min once base Shape
+    // capped out, which defeats the point of it being "new content for
+    // longer sessions."
     // Burn is untouched here — see the fixed-curve override below.
     let total = baseTotal;
 
@@ -663,7 +669,7 @@ function computeSessionPlan(dayKey) {
 
     let bonus2Added = null;
     const bonus2 = day.extended && day.extended.bonus2;
-    if (bonus2) {
+    if (bonus2 && sessionLengthMinutes >= (bonus2.minSessionLength || 0)) {
       const bonus2Seconds = estimateExerciseSeconds(bonus2);
       if (total + bonus2Seconds <= budgetSeconds) { bonus2Added = bonus2.name; total += bonus2Seconds; }
     }
