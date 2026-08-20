@@ -274,7 +274,7 @@
   <div class="wrap">
     <div class="eyebrow">Full-Body Pilates-Inspired Toning</div>
     <h1>TONE LOG</h1>
-    <div class="sub">3-day rotation · lean muscle &amp; core-glute focus</div>
+    <div class="sub">4-day rotation · lean muscle &amp; core-glute focus</div>
     <div class="daybar" id="dayBar"></div>
   </div>
 </header>
@@ -351,59 +351,76 @@
                   Shape/Define budget competition (see STAIRMASTER_MINUTES)
                   so it never trades volume against them either way. */
 
+// Every day's bonus slot is Shape-tier now (the old Define-tier "bonus1"
+// slot is unused throughout — day.bonus is simply omitted; the grow branch
+// in computeSessionPlan already no-ops cleanly when it's absent, so this
+// needed no code change). Each day still has exactly one budget-gated
+// bonus exercise, just consolidated onto the bonus2/Shape slot.
 const DAYS = {
-  day1: {
-    label: "Core & Glutes",
-    fullTitle: "Full Body: Core & Glute Focus",
+  upperA: {
+    label: "Upper A",
+    fullTitle: "Upper Body: Push Focus",
     exercises: [
-      { name: "Goblet Squat", sets: 4, repRange: [12,15], cat: "Foundation" },
-      { name: "DB Romanian Deadlift", sets: 4, repRange: [12,15], cat: "Foundation" },
-      { name: "Cable Glute Kickback", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg", minSets: 2 },
-      { name: "Standing Band Hip Abduction", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg", minSets: 2 },
+      { name: "Incline DB Press", sets: 4, repRange: [12,15], cat: "Foundation" },
+      { name: "DB Shoulder Press", sets: 4, repRange: [12,15], cat: "Foundation" },
+      { name: "Overhead Rope Extension", sets: 4, repRange: [15,20], cat: "Shape" },
+      { name: "Lateral Raise", sets: 4, repRange: [15,20], cat: "Shape", minSets: 2 },
       { name: "Plank with Shoulder Tap", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side", minSets: 2 },
-      { name: "Frog Pump", sets: 3, repRange: [15,20], cat: "Define", minSets: 2 },
       { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
     ],
-    bonus: { name: "Cable Woodchopper", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side" },
     extended: {
-      bonus2: { name: "DB Hip Thrust", sets: 3, repRange: [15,20], cat: "Shape" }
+      bonus2: { name: "Cable Chest Fly", sets: 3, repRange: [15,20], cat: "Shape" }
     }
   },
-  day2: {
-    label: "Arms & Back",
-    fullTitle: "Full Body: Arms & Back Focus",
+  upperB: {
+    label: "Upper B",
+    fullTitle: "Upper Body: Pull Focus",
     exercises: [
       { name: "Chest-Supported DB Row", sets: 4, repRange: [12,15], cat: "Foundation" },
-      { name: "Incline DB Press", sets: 4, repRange: [12,15], cat: "Foundation" },
-      { name: "Overhead Rope Extension", sets: 4, repRange: [15,20], cat: "Shape" },
       { name: "Incline Bench DB Curl", sets: 4, repRange: [15,20], cat: "Shape" },
+      { name: "Seated Cable Row", sets: 4, repRange: [15,20], cat: "Shape", minSets: 2 },
       { name: "Lat Pulldown", sets: 3, repRange: [15,20], cat: "Define" },
-      { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
-    ],
-    bonus: { name: "Lateral Raise", sets: 3, repRange: [15,20], cat: "Define" },
-    extended: {
-      bonus2: { name: "Seated Cable Row", sets: 3, repRange: [15,20], cat: "Shape" }
-    }
-  },
-  day3: {
-    label: "Legs & Core",
-    fullTitle: "Full Body: Legs & Core Focus",
-    exercises: [
-      { name: "Walking Lunge", sets: 4, repRange: [12,15], cat: "Foundation", repNote: "/leg" },
-      { name: "Leg Press", sets: 4, repRange: [12,15], cat: "Foundation" },
-      { name: "Barbell Hip Thrust", sets: 4, repRange: [12,15], cat: "Foundation", minSets: 2 },
-      { name: "Cable Pull-Through", sets: 4, repRange: [15,20], cat: "Shape", minSets: 2 },
-      { name: "Curtsy Lunge", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg" },
       { name: "Pallof Press", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side", minSets: 2 },
       { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
     ],
-    bonus: { name: "Glute Bridge Hold", sets: 3, repRange: [20,30], cat: "Define", repUnit: "sec hold" },
+    extended: {
+      bonus2: { name: "Face Pull", sets: 3, repRange: [15,20], cat: "Shape" }
+    }
+  },
+  lowerA: {
+    label: "Lower A",
+    fullTitle: "Lower Body: Glute & Hamstring Focus",
+    exercises: [
+      { name: "DB Romanian Deadlift", sets: 4, repRange: [12,15], cat: "Foundation" },
+      { name: "Barbell Hip Thrust", sets: 4, repRange: [12,15], cat: "Foundation", minSets: 2 },
+      { name: "Cable Glute Kickback", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg", minSets: 2 },
+      { name: "Cable Hip Abduction", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg", minSets: 2 },
+      { name: "Frog Pump", sets: 3, repRange: [15,20], cat: "Define", minSets: 2 },
+      { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
+    ],
+    extended: {
+      bonus2: { name: "Single-Leg RDL", sets: 3, repRange: [15,20], cat: "Shape", repNote: "/leg" }
+    }
+  },
+  lowerB: {
+    label: "Lower B",
+    fullTitle: "Lower Body: Quad & Glute Focus",
+    exercises: [
+      { name: "Goblet Squat", sets: 4, repRange: [12,15], cat: "Foundation" },
+      { name: "Walking Lunge", sets: 4, repRange: [12,15], cat: "Foundation", repNote: "/leg" },
+      { name: "Leg Press", sets: 4, repRange: [12,15], cat: "Foundation" },
+      { name: "Cable Pull-Through", sets: 4, repRange: [15,20], cat: "Shape", minSets: 2 },
+      { name: "Curtsy Lunge", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg" },
+      { name: "Seated / Rotary Calf Raise", sets: 4, repRange: [15,20], cat: "Shape" },
+      { name: "Cable Woodchopper", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side", minSets: 2 },
+      { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
+    ],
     extended: {
       bonus2: { name: "Bulgarian Split Squat", sets: 3, repRange: [12,15], cat: "Shape", repNote: "/leg" }
     }
   }
 };
-const DAY_KEYS = ["day1","day2","day3"];
+const DAY_KEYS = ["upperA","upperB","lowerA","lowerB"];
 
 const REST_BY_CAT = {
   Foundation: 75,  // moderate load, controlled tempo — recovers faster than a heavy strength set
@@ -419,26 +436,29 @@ const EXERCISE_INFO = {
   "Goblet Squat": { muscles: "Quads, glutes, core (anti-flexion)", cue: "Inhale down for a slow 3-count, exhale to press up through your heels — squeeze glutes at the top." },
   "DB Romanian Deadlift": { muscles: "Hamstrings, glutes, lower back stabilizers", cue: "Hinge at the hips with a soft knee bend, spine long — feel the stretch in your hamstrings, not your low back." },
   "Cable Glute Kickback": { muscles: "Glutes (max activation)", cue: "Small controlled range — squeeze the glute hard for a full second at the top before lowering." },
-  "Standing Band Hip Abduction": { muscles: "Glute medius, hip stabilizers", cue: "Stand tall and brace your core — lift the leg out to the side without leaning your torso away." },
+  "Cable Hip Abduction": { muscles: "Glute medius/minimus", cue: "Ankle cuff at the low pulley, small controlled arc out to the side — resist the pull back in just as slowly as you pushed out." },
   "Plank with Shoulder Tap": { muscles: "Core (anti-rotation), shoulders", cue: "Keep hips dead still — widen your stance if they rock side to side." },
   "Frog Pump": { muscles: "Glute max/medius, adductors", cue: "Soles of feet together, knees out — small pulses driven entirely by the glutes, not the lower back." },
   "Stairmaster": { muscles: "Cardiovascular conditioning, lower-body endurance", cue: "Steady, controlled pace — you should be able to hold a conversation, not gasp for air. This is conditioning, not a sprint." },
   "Cable Woodchopper": { muscles: "Obliques, core rotation", cue: "Rotate from your ribcage, not just your arms — keep hips relatively square." },
-  "DB Hip Thrust": { muscles: "Glutes, hamstrings", cue: "Drive through your heels, pause and squeeze glutes hard at the top, ribs down." },
+  "DB Shoulder Press": { muscles: "Shoulders, triceps (secondary)", cue: "Press straight overhead with control, don't let the ribs flare — lower slow, no bouncing out of the bottom." },
   "Chest-Supported DB Row": { muscles: "Mid-back, lats, rear delts", cue: "Chest pressed into the incline bench the whole set — pull elbows back and slightly up, squeeze shoulder blades together, no momentum from your legs." },
   "Incline DB Press": { muscles: "Upper chest, front delts, triceps", cue: "Lower slowly for a 3-count, press up with control — keep core braced so your hips don't sag.", note: "No bench available? Sub in push-ups instead — same tempo and rep target, hands slightly wider than shoulder-width." },
   "Overhead Rope Extension": { muscles: "Triceps (long head)", cue: "Elbows stay pinned by your ears — lower the rope slow behind your head, then press up with control, no jerking." },
+  "Cable Chest Fly": { muscles: "Chest", cue: "Slight bend in the elbows, slow controlled arc — squeeze at the center, don't let the cable yank your arms back." },
   "Incline Bench DB Curl": { muscles: "Biceps (long head, deep stretch emphasis)", cue: "Let your arms hang fully behind your torso at the bottom, curl slow, squeeze at the top — no swinging." },
   "Lat Pulldown": { muscles: "Lats, mid-back", cue: "Lead with your elbows down and back, chest lifted — avoid leaning back excessively." },
   "Lateral Raise": { muscles: "Lateral/medial deltoid (shoulder cap)", cue: "Slow, controlled lift to shoulder height, lead with elbows not hands — no swinging or momentum." },
   "Seated Cable Row": { muscles: "Mid-back, lats", cue: "Sit tall, drive elbows back past your ribs — avoid rocking your torso for momentum." },
+  "Face Pull": { muscles: "Rear delts, upper back", cue: "Pull to eye level, elbows high, squeeze shoulder blades together — this is about the pull-apart at the end, not just moving weight." },
   "Walking Lunge": { muscles: "Quads, glutes, balance/core", cue: "Step and lower slow and controlled until both knees hit ~90°, drive through the front heel." },
-  "Leg Press": { muscles: "Quads, glutes", cue: "Lower slow until knees reach 90° — don't let your lower back round off the pad." },
+  "Leg Press": { muscles: "Quads, glutes", cue: "Feet set high and wide on the platform to bias the glutes — lower slow until knees reach 90°, don't let your lower back round off the pad." },
   "Cable Pull-Through": { muscles: "Glutes, hamstrings", cue: "Hinge at the hips with a neutral spine, squeeze glutes hard to stand tall." },
   "Barbell Hip Thrust": { muscles: "Glutes (primary driver)", cue: "Drive through heels, pause and squeeze hard at the top for a full second before lowering slow." },
+  "Single-Leg RDL": { muscles: "Hamstrings, glutes, balance", cue: "Hinge at the hip with a soft bend in the standing knee, control the balance — slow is the whole point here." },
   "Curtsy Lunge": { muscles: "Glute medius/minimus (stabilizer emphasis), quads", cue: "Step back and across slowly, control the descent — this is about hip stability, not knee drive." },
+  "Seated / Rotary Calf Raise": { muscles: "Calves (soleus emphasis, seated machine)", cue: "Knees stay bent through the range so the seated position isolates the soleus — pause and squeeze at the top, no bouncing." },
   "Pallof Press": { muscles: "Core (anti-rotation, obliques/transverse abdominis)", cue: "Press straight out and hold for a slow 2-count, resisting the cable's pull to rotate you — hips and shoulders stay square." },
-  "Glute Bridge Hold": { muscles: "Glutes, core", cue: "Squeeze glutes and hold — ribs down, no arching through the lower back." },
   "Bulgarian Split Squat": { muscles: "Quads, glutes, balance", cue: "Torso slightly forward, lower slow and controlled, front knee tracks over the toes." }
 };
 
@@ -524,7 +544,7 @@ window.storage = {
   }
 };
 
-let currentDay = "day1";
+let currentDay = "upperA";
 let saveTimer = null;
 let currentData = null;
 let restInterval = null;
