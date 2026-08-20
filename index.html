@@ -124,7 +124,6 @@
   .tag-shape { background: var(--plate-blue); }
   .tag-define { background: var(--plate-amber); }
   .tag-burn { background: #5a564c; }
-  .tag-warmup { background: var(--dim); }
 
   .exercise-reference {
     font-family: 'DM Mono', monospace; font-size: 12px; color: var(--dim);
@@ -347,23 +346,23 @@
      Foundation — compound-ish, controlled tempo, 12-15 reps
      Shape      — moderate resistance, 15-20 reps
      Define     — isolation/core, 15-20 reps or timed holds
-     Burn       — cardio interval or high-rep bodyweight finisher
-   "warmup" is a distinct exercise type (not a tier) — always scheduled,
-   never trimmed, logged as a real cardio entry rather than a text note. */
+     Burn       — the day's single steady-state Stairmaster block, always
+                  last in the list. It sits entirely outside the Foundation/
+                  Shape/Define budget competition (see STAIRMASTER_MINUTES)
+                  so it never trades volume against them either way. */
 
 const DAYS = {
   day1: {
     label: "Core & Glutes",
     fullTitle: "Full Body: Core & Glute Focus",
     exercises: [
-      { name: "Warm-Up Cardio", type: "cardio", sets: 1, cat: "warmup", durationRange: [5,8], durationUnit: "min", customScaling: { 30: 1, 45: 1, 60: 1, 75: 1, 90: 1, 105: 1, 120: 1 } },
       { name: "Goblet Squat", sets: 4, repRange: [12,15], cat: "Foundation" },
       { name: "DB Romanian Deadlift", sets: 4, repRange: [12,15], cat: "Foundation" },
       { name: "Cable Glute Kickback", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg", minSets: 2 },
       { name: "Standing Band Hip Abduction", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg", minSets: 2 },
       { name: "Plank with Shoulder Tap", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side", minSets: 2 },
       { name: "Frog Pump", sets: 3, repRange: [15,20], cat: "Define", minSets: 2 },
-      { name: "Stairmaster Interval / Bicycle Crunches", type: "cardio", sets: 2, cat: "Burn", durationRange: [45,90], durationUnit: "sec" }
+      { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
     ],
     bonus: { name: "Cable Woodchopper", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side" },
     extended: {
@@ -374,13 +373,12 @@ const DAYS = {
     label: "Arms & Back",
     fullTitle: "Full Body: Arms & Back Focus",
     exercises: [
-      { name: "Warm-Up Cardio", type: "cardio", sets: 1, cat: "warmup", durationRange: [5,8], durationUnit: "min", customScaling: { 30: 1, 45: 1, 60: 1, 75: 1, 90: 1, 105: 1, 120: 1 } },
       { name: "Chest-Supported DB Row", sets: 4, repRange: [12,15], cat: "Foundation" },
       { name: "Incline DB Press", sets: 4, repRange: [12,15], cat: "Foundation" },
       { name: "Overhead Rope Extension", sets: 4, repRange: [15,20], cat: "Shape" },
       { name: "Incline Bench DB Curl", sets: 4, repRange: [15,20], cat: "Shape" },
       { name: "Lat Pulldown", sets: 3, repRange: [15,20], cat: "Define" },
-      { name: "Stairmaster Interval / Mountain Climbers", type: "cardio", sets: 2, cat: "Burn", durationRange: [45,90], durationUnit: "sec" }
+      { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
     ],
     bonus: { name: "Lateral Raise", sets: 3, repRange: [15,20], cat: "Define" },
     extended: {
@@ -391,14 +389,13 @@ const DAYS = {
     label: "Legs & Core",
     fullTitle: "Full Body: Legs & Core Focus",
     exercises: [
-      { name: "Warm-Up Cardio", type: "cardio", sets: 1, cat: "warmup", durationRange: [5,8], durationUnit: "min", customScaling: { 30: 1, 45: 1, 60: 1, 75: 1, 90: 1, 105: 1, 120: 1 } },
       { name: "Walking Lunge", sets: 4, repRange: [12,15], cat: "Foundation", repNote: "/leg" },
       { name: "Leg Press", sets: 4, repRange: [12,15], cat: "Foundation" },
       { name: "Barbell Hip Thrust", sets: 4, repRange: [12,15], cat: "Foundation", minSets: 2 },
       { name: "Cable Pull-Through", sets: 4, repRange: [15,20], cat: "Shape", minSets: 2 },
       { name: "Curtsy Lunge", sets: 4, repRange: [15,20], cat: "Shape", repNote: "/leg" },
       { name: "Pallof Press", sets: 3, repRange: [12,15], cat: "Define", repNote: "/side", minSets: 2 },
-      { name: "Stairmaster Interval / Jump Squats", type: "cardio", sets: 2, cat: "Burn", durationRange: [45,90], durationUnit: "sec" }
+      { name: "Stairmaster", type: "cardio", sets: 1, cat: "Burn", durationUnit: "min" }
     ],
     bonus: { name: "Glute Bridge Hold", sets: 3, repRange: [20,30], cat: "Define", repUnit: "sec hold" },
     extended: {
@@ -411,21 +408,21 @@ const DAY_KEYS = ["day1","day2","day3"];
 const REST_BY_CAT = {
   Foundation: 75,  // moderate load, controlled tempo — recovers faster than a heavy strength set
   Shape: 55,
-  Define: 45,      // isolation/core, or holding a position — short recovery
-  Burn: 35,        // cardio interval / bodyweight finisher — keep the heart rate up
-  warmup: 0
+  Define: 45      // isolation/core, or holding a position — short recovery
+  // no Burn entry: Stairmaster is one continuous steady-state block, not
+  // interval sets, so it never reaches the rest-timer trigger (see the
+  // Foundation/Shape/Define allowlist on the set-checkbox handler below)
 };
 
 // target muscles + a one-line form cue per exercise, shown via tap-to-expand on the exercise name
 const EXERCISE_INFO = {
-  "Warm-Up Cardio": { muscles: "Full body — raises heart rate, warms up joints", cue: "Easy, conversational pace — focus on posture and breath, not speed." },
   "Goblet Squat": { muscles: "Quads, glutes, core (anti-flexion)", cue: "Inhale down for a slow 3-count, exhale to press up through your heels — squeeze glutes at the top." },
   "DB Romanian Deadlift": { muscles: "Hamstrings, glutes, lower back stabilizers", cue: "Hinge at the hips with a soft knee bend, spine long — feel the stretch in your hamstrings, not your low back." },
   "Cable Glute Kickback": { muscles: "Glutes (max activation)", cue: "Small controlled range — squeeze the glute hard for a full second at the top before lowering." },
   "Standing Band Hip Abduction": { muscles: "Glute medius, hip stabilizers", cue: "Stand tall and brace your core — lift the leg out to the side without leaning your torso away." },
   "Plank with Shoulder Tap": { muscles: "Core (anti-rotation), shoulders", cue: "Keep hips dead still — widen your stance if they rock side to side." },
   "Frog Pump": { muscles: "Glute max/medius, adductors", cue: "Soles of feet together, knees out — small pulses driven entirely by the glutes, not the lower back." },
-  "Stairmaster Interval / Bicycle Crunches": { muscles: "Cardio / lower body (stairmaster) or core (bicycle crunches)", cue: "Push the pace for the interval, then recover fully — switch to bicycle crunches if the machine's busy." },
+  "Stairmaster": { muscles: "Cardiovascular conditioning, lower-body endurance", cue: "Steady, controlled pace — you should be able to hold a conversation, not gasp for air. This is conditioning, not a sprint." },
   "Cable Woodchopper": { muscles: "Obliques, core rotation", cue: "Rotate from your ribcage, not just your arms — keep hips relatively square." },
   "DB Hip Thrust": { muscles: "Glutes, hamstrings", cue: "Drive through your heels, pause and squeeze glutes hard at the top, ribs down." },
   "Chest-Supported DB Row": { muscles: "Mid-back, lats, rear delts", cue: "Chest pressed into the incline bench the whole set — pull elbows back and slightly up, squeeze shoulder blades together, no momentum from your legs." },
@@ -433,7 +430,6 @@ const EXERCISE_INFO = {
   "Overhead Rope Extension": { muscles: "Triceps (long head)", cue: "Elbows stay pinned by your ears — lower the rope slow behind your head, then press up with control, no jerking." },
   "Incline Bench DB Curl": { muscles: "Biceps (long head, deep stretch emphasis)", cue: "Let your arms hang fully behind your torso at the bottom, curl slow, squeeze at the top — no swinging." },
   "Lat Pulldown": { muscles: "Lats, mid-back", cue: "Lead with your elbows down and back, chest lifted — avoid leaning back excessively." },
-  "Stairmaster Interval / Mountain Climbers": { muscles: "Cardio / core &amp; shoulder stability (mountain climbers)", cue: "Keep hips low and core tight through the whole interval push." },
   "Lateral Raise": { muscles: "Lateral/medial deltoid (shoulder cap)", cue: "Slow, controlled lift to shoulder height, lead with elbows not hands — no swinging or momentum." },
   "Seated Cable Row": { muscles: "Mid-back, lats", cue: "Sit tall, drive elbows back past your ribs — avoid rocking your torso for momentum." },
   "Walking Lunge": { muscles: "Quads, glutes, balance/core", cue: "Step and lower slow and controlled until both knees hit ~90°, drive through the front heel." },
@@ -442,7 +438,6 @@ const EXERCISE_INFO = {
   "Barbell Hip Thrust": { muscles: "Glutes (primary driver)", cue: "Drive through heels, pause and squeeze hard at the top for a full second before lowering slow." },
   "Curtsy Lunge": { muscles: "Glute medius/minimus (stabilizer emphasis), quads", cue: "Step back and across slowly, control the descent — this is about hip stability, not knee drive." },
   "Pallof Press": { muscles: "Core (anti-rotation, obliques/transverse abdominis)", cue: "Press straight out and hold for a slow 2-count, resisting the cable's pull to rotate you — hips and shoulders stay square." },
-  "Stairmaster Interval / Jump Squats": { muscles: "Cardio / lower body power (jump squats)", cue: "Land soft with bent knees on jump squats; keep the stairmaster pace honest, not just fast." },
   "Glute Bridge Hold": { muscles: "Glutes, core", cue: "Squeeze glutes and hold — ribs down, no arching through the lower back." },
   "Bulgarian Split Squat": { muscles: "Quads, glutes, balance", cue: "Torso slightly forward, lower slow and controlled, front knee tracks over the toes." }
 };
@@ -542,25 +537,26 @@ let showAllExercises = false; // per-day override to ignore the time-budget trim
 /* ============ SESSION LENGTH / TIME-BUDGET TRIMMING ============ */
 
 const WORK_SECONDS_PER_SET = 40; // rough time to perform one set, used only to estimate exercise duration
-const TRIM_PRIORITY = { Burn: 0, Define: 1, Shape: 2, Foundation: 3 }; // lower = dropped first when shrinking; Foundation is never dropped
+const TRIM_PRIORITY = { Define: 1, Shape: 2, Foundation: 3 }; // lower = dropped first when shrinking; Foundation is never dropped
 
 // Hard per-exercise set cap for Foundation/Shape/Define — every base exercise
 // in DAYS is already defined at exactly its tier's cap, so sessions never add
 // more sets to an existing exercise once there's slack budget. Instead, once
 // a tier's base exercises are all sitting at cap, extra budget for that tier
 // routes into a bonus/secondary exercise (day.bonus for Define,
-// day.extended.bonus2 for Shape) — see the grow branch below. Burn is
-// unrelated to this cap; its own volume follows BURN_ROUND_CURVE.
+// day.extended.bonus2 for Shape) — see the grow branch below. Burn (the
+// Stairmaster block) is unrelated to this cap and to this budget entirely;
+// its own duration follows STAIRMASTER_MINUTES below.
 const SET_CAP = { Foundation: 4, Shape: 4, Define: 3 };
 
-// The Burn-tier cardio finisher's round count follows this fixed curve
-// instead of competing in the generic trim/grow logic above (see the
-// override at the end of computeSessionPlan). It's applied as a pure
-// after-the-fact patch specifically so Foundation/Shape/Define's own
-// budget math runs completely untouched by Burn's presence either way —
-// Burn's volume is additive on top of whatever they already computed,
-// never traded against it.
-const BURN_ROUND_CURVE = { 30: 1, 45: 1, 60: 2, 75: 2, 90: 3, 105: 3, 120: 3 };
+// Stairmaster's duration follows this fixed curve instead of competing for
+// Foundation/Shape/Define's budget at all (see computeSessionPlan, where
+// Burn-tier exercises are filtered out of the budget math before it even
+// runs) — so removing the old warm-up + interval-round system frees that
+// time up entirely for lifting, with nothing carved back out for cardio
+// except this block's own independent duration. 0 means the block is
+// omitted from the session entirely, not shown with a 0 duration.
+const STAIRMASTER_MINUTES = { 30: 0, 45: 15, 60: 30, 75: 30, 90: 30, 105: 30, 120: 30 };
 
 function perSetSeconds(cat) { return WORK_SECONDS_PER_SET + (REST_BY_CAT[cat] || 0); }
 function estimateExerciseSeconds(ex) { return ex.sets * perSetSeconds(ex.cat); }
@@ -580,33 +576,26 @@ async function saveSessionLength() {
 // Decides what to show for a day at the current session-length budget.
 // Returns { entries: [{ex, sets}], hiddenNames, extraSetsAdded, bonusAdded }
 //   - under budget at base set counts: shrink by dropping whole exercises
-//     (Burn first, then Define, then Shape; Foundation is never dropped —
-//     and any exercise with minSets is stepped down to its floor instead
-//     of being dropped outright, so core/glute work never disappears)
+//     (Define first, then Shape; Foundation is never dropped — and any
+//     exercise with minSets is stepped down to its floor instead of being
+//     dropped outright, so core/glute work never disappears)
 //   - at or under budget already, with room to spare: Foundation/Shape/
 //     Define exercises never gain sets beyond their base count (every base
 //     exercise is already defined at its tier's SET_CAP) — instead, once a
 //     tier's base list is fully at cap, extra budget for that tier goes
 //     toward a bonus/secondary exercise (day.bonus for Define, bonus2 for
 //     Shape), added as soon as it fits rather than gated to a fixed band
+//   - Stairmaster (Burn tier) is excluded from all of the above entirely —
+//     it never competes for or consumes this budget, so it can't reduce
+//     Foundation/Shape/Define's share either. Its own duration is applied
+//     as a fixed-curve append at the very end (STAIRMASTER_MINUTES).
 function computeSessionPlan(dayKey) {
   const day = DAYS[dayKey];
   const budgetSeconds = sessionLengthMinutes * 60;
 
-  // Exercises with a customScaling entry for the CURRENT band (e.g. the
-  // warm-up cardio block, always 1 set at every band) are shown at that
-  // scheduled set count and sit completely outside the trim/grow decision
-  // logic below for this band only.
-  const scheduled = [];
-  const normal = [];
-  day.exercises.forEach((ex, idx) => {
-    const customSets = ex.customScaling ? ex.customScaling[sessionLengthMinutes] : undefined;
-    if (customSets !== undefined) {
-      scheduled.push({ idx, ex, sets: customSets });
-    } else {
-      normal.push({ idx, ex });
-    }
-  });
+  const normal = day.exercises
+    .map((ex, idx) => ({ ex, idx }))
+    .filter(e => e.ex.cat !== 'Burn');
 
   const baseTotal = normal.reduce((sum, e) => sum + estimateExerciseSeconds(e.ex), 0);
 
@@ -671,35 +660,23 @@ function computeSessionPlan(dayKey) {
     bonusAdded = [bonus1Added, bonus2Added].filter(Boolean);
   }
 
-  // merge the always-scheduled exercises back in at their real day.exercises
-  // position; bonus entries (idx === null) have no real position, so they
-  // stay appended at the end
-  const positioned = normalEntries.filter(e => e.idx !== null).concat(scheduled);
+  // bonus entries (idx === null) have no real position, so they stay
+  // appended after the base list, in the order they were added (bonus1
+  // then bonus2)
+  const positioned = normalEntries.filter(e => e.idx !== null);
   positioned.sort((a, b) => a.idx - b.idx);
   const trailing = normalEntries.filter(e => e.idx === null);
   let entries = [...positioned, ...trailing].map(e => ({ ex: e.ex, sets: e.sets }));
 
-  // Burn-tier round count override (see BURN_ROUND_CURVE): runs last, after
-  // Foundation/Shape/Define are fully decided, so it can only ever add to
-  // the day's total volume, never take budget from them. Handles both
-  // outcomes above: if the trim branch dropped Burn (no floor on it), it's
-  // re-added here; if the grow branch left it untouched or grew it, its
-  // count is corrected to the curve's value regardless.
-  const burnTarget = BURN_ROUND_CURVE[sessionLengthMinutes];
-  day.exercises.forEach(ex => {
-    if (ex.cat !== 'Burn') return;
-    const existing = entries.find(e => e.ex === ex);
-    if (existing) {
-      existing.sets = burnTarget;
-    } else {
-      // dropped by the trim branch; Burn is always the last base exercise
-      // in day.exercises (before bonus/bonus2), so appending here preserves
-      // correct render order without needing to re-derive its position
-      entries.push({ ex, sets: burnTarget });
-    }
-    const hiddenIdx = hiddenNames.indexOf(ex.name);
-    if (hiddenIdx !== -1) hiddenNames.splice(hiddenIdx, 1);
-  });
+  // Stairmaster: appended last, after every Foundation/Shape/Define entry
+  // (base list and bonus/bonus2 alike), so it always renders at the very
+  // end of the session. Present only when its band has a nonzero target —
+  // absent at 30min, not shown with a 0 duration.
+  const stairmasterMinutes = STAIRMASTER_MINUTES[sessionLengthMinutes] || 0;
+  if (stairmasterMinutes > 0) {
+    const stairmaster = day.exercises.find(ex => ex.cat === 'Burn');
+    if (stairmaster) entries.push({ ex: stairmaster, sets: 1 });
+  }
 
   return { entries, hiddenNames, extraSetsAdded, bonusAdded };
 }
@@ -953,8 +930,9 @@ async function updateProgressionUI(block, ex, slot) {
 
 function rangeLabel(ex) {
   if (ex.type === 'cardio') {
-    const unit = ex.durationUnit === 'min' ? 'min' : 'sec';
-    return `${ex.durationRange[0]}-${ex.durationRange[1]} ${unit}${ex.cat === 'warmup' ? '' : ' intervals'}`;
+    // the only cardio exercise left is Stairmaster — a single steady-state
+    // block whose target duration (not a range) follows the current band
+    return `${STAIRMASTER_MINUTES[sessionLengthMinutes] || 0} min steady-state`;
   }
   return `${ex.repRange[0]}-${ex.repRange[1]} ${ex.repUnit || 'reps'}${ex.repNote ? ' ' + ex.repNote : ''}`;
 }
@@ -1019,12 +997,12 @@ async function renderExerciseBlock(content, ex, plannedSets, slot) {
       const tr = document.createElement('tr');
       tr.className = 'set-row' + (set.done ? ' done' : '');
       if (ex.type === 'cardio') {
-        const unit = ex.durationUnit === 'min' ? 'min' : 'sec';
+        const durationPlaceholder = STAIRMASTER_MINUTES[sessionLengthMinutes] || 30;
         tr.innerHTML = `
           <td class="num">${si+1}</td>
-          <td><input class="cell-input text-input" type="text" placeholder="e.g. stairmaster" value="${set.activity}" data-idx="${si}" data-field="activity"></td>
-          <td><input class="cell-input" type="number" inputmode="numeric" placeholder="${unit === 'min' ? '6' : '60'}" value="${set.duration}" data-idx="${si}" data-field="duration"></td>
-          <td><input class="cell-input text-input" type="text" placeholder="optional" value="${set.intensity}" data-idx="${si}" data-field="intensity"></td>
+          <td><input class="cell-input text-input" type="text" placeholder="Stairmaster" value="${set.activity}" data-idx="${si}" data-field="activity"></td>
+          <td><input class="cell-input" type="number" inputmode="numeric" placeholder="${durationPlaceholder}" value="${set.duration}" data-idx="${si}" data-field="duration"></td>
+          <td><input class="cell-input text-input" type="text" placeholder="incline / level" value="${set.intensity}" data-idx="${si}" data-field="intensity"></td>
           <td class="check-cell"><button class="check-box ${set.done ? 'checked' : ''}" data-idx="${si}">${set.done ? '✓' : ''}</button></td>
         `;
       } else {
@@ -1056,7 +1034,11 @@ async function renderExerciseBlock(content, ex, plannedSets, slot) {
         set.done = !set.done;
         renderSets();
         queueSave();
-        if (set.done && ex.cat !== 'warmup') startRestTimer(ex.cat);
+        // Foundation/Shape/Define only: Stairmaster is one continuous
+        // steady-state block, not interval sets, so there's no "next set"
+        // to rest for — starting a rest timer after checking it off would
+        // be a stray leftover from the old interval-round system.
+        if (set.done && (ex.cat === 'Foundation' || ex.cat === 'Shape' || ex.cat === 'Define')) startRestTimer(ex.cat);
       });
     });
   }
