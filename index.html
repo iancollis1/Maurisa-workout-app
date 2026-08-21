@@ -547,9 +547,12 @@ window.storage = {
 let currentDay = "upperA";
 let saveTimer = null;
 let currentData = null;
-let restInterval = null;
-let restSecondsLeft = 0;
+let restInterval = null;   // drives the periodic re-render tick only — never the source of truth for remaining time
+let restStartTime = null;  // Date.now() when the current rest period began; null when no timer is active
+let restDurationMs = 0;    // total duration of the current rest period, adjustable via +15s/-15s
+let restAlertFired = false; // one-shot guard so the audio/vibration alert fires exactly once per rest period
 let timerContext = "Foundation";
+let audioCtx = null; // lazily created on first alert, reused after
 
 let sessionLengthMinutes = 60;
 let showAllExercises = false; // per-day override to ignore the time-budget trim, reset on day switch or slider change
@@ -1077,10 +1080,11 @@ const timerBar = document.getElementById('timerBar');
 const timerClock = document.getElementById('timerClock');
 const timerLabel = document.getElementById('timerLabel');
 
-function formatClock(s) {
-  const m = Math.floor(Math.abs(s) / 60);
-  const sec = Math.abs(s) % 60;
-  return `${s < 0 ? '+' : ''}${m}:${sec.toString().padStart(2, '0')}`;
+function formatClock(totalSeconds) {
+  const s = Math.max(0, totalSeconds);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
 function durationFor(cat) {
@@ -1091,49 +1095,125 @@ function labelFor(cat) {
   return `Rest — ${cat}`;
 }
 
-function tick() {
-  restSecondsLeft -= 1;
-  timerClock.textContent = formatClock(restSecondsLeft);
-  if (restSecondsLeft <= 0 && !timerBar.classList.contains('warn')) {
+// Timestamp-based remaining time: duration minus real elapsed wall-clock
+// time, recomputed fresh on every call rather than decremented from a
+// stored counter. Backgrounding the tab, locking the phone, or switching
+// apps mid-rest can't cause drift — there's no ticking counter to fall out
+// of sync, just simple subtraction against Date.now().
+function remainingMs() {
+  if (restStartTime === null) return 0;
+  return restDurationMs - (Date.now() - restStartTime);
+}
+
+// Web Audio beep, generated in-code (no audio file needed, keeps this a
+// single file) — two short tones. Creating the AudioContext happens lazily
+// on first use, from inside a click handler (checking a set done, or the
+// +/-15s buttons), so it satisfies browsers' user-gesture requirement for
+// audio playback.
+function playAlertSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    [0, 0.18].forEach(offset => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.3, now + offset + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.15);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.16);
+    });
+  } catch (e) {}
+}
+
+// In-tab-only alert: no service workers, no notification permissions, no
+// background delivery. Gated on the tab actually being visible so it never
+// fires from a backgrounded/hidden state — see the visibilitychange
+// listener below, which is the only other call site, for the case where
+// the timer elapsed while the tab was hidden.
+function fireTimerAlert() {
+  if (document.visibilityState !== 'visible') return;
+  playAlertSound();
+  if (navigator.vibrate) { try { navigator.vibrate([200, 100, 200]); } catch (e) {} }
+}
+
+function renderTimerTick() {
+  const remaining = remainingMs();
+  if (remaining <= 0) {
+    timerClock.textContent = "Time's up";
     timerBar.classList.add('warn');
-    if (navigator.vibrate) { try { navigator.vibrate([200, 100, 200]); } catch(e) {} }
+    // restAlertFired is only consumed once the alert has actually been
+    // allowed to fire (i.e. while visible) -- a background setInterval
+    // tick can still cross zero while the tab is hidden, and if that
+    // consumed the one-shot here, returning to the tab later would find
+    // it already "spent" and silently never alert at all. Gating on
+    // visibility here, not just inside fireTimerAlert, is what lets the
+    // visibilitychange handler's re-render still fire it on regain-focus.
+    if (!restAlertFired && document.visibilityState === 'visible') {
+      restAlertFired = true;
+      fireTimerAlert();
+    }
+  } else {
+    timerBar.classList.remove('warn');
+    timerClock.textContent = formatClock(Math.ceil(remaining / 1000));
   }
 }
 
 function startRestTimer(context) {
   timerContext = context;
   clearInterval(restInterval);
-  restSecondsLeft = durationFor(context);
+  restStartTime = Date.now();
+  restDurationMs = durationFor(context) * 1000;
+  restAlertFired = false;
   timerBar.classList.remove('warn');
   timerBar.classList.add('active');
   timerLabel.textContent = labelFor(context);
-  timerClock.textContent = formatClock(restSecondsLeft);
-  restInterval = setInterval(tick, 1000);
+  renderTimerTick();
+  restInterval = setInterval(renderTimerTick, 1000);
 }
 
 function ensureRunning() {
-  if (!restInterval) restInterval = setInterval(tick, 1000);
+  if (!restInterval) restInterval = setInterval(renderTimerTick, 1000);
 }
 
-// -15s / +15s: subtract and add respectively. Verified explicitly here
-// since a swapped-direction bug on these exact buttons has bitten this
-// app's sibling project before.
+// -15s / +15s: subtract and add respectively, applied to the stored
+// duration (not the displayed number), so the timestamp math they feed
+// stays correct. Verified explicitly here since a swapped-direction bug on
+// these exact buttons has bitten this app's sibling project before.
 document.getElementById('timerMinus15').addEventListener('click', () => {
-  restSecondsLeft -= 15;
-  if (restSecondsLeft <= 0) timerBar.classList.add('warn');
-  timerClock.textContent = formatClock(restSecondsLeft);
+  restDurationMs -= 15000;
+  renderTimerTick();
   ensureRunning();
 });
 document.getElementById('timerAdd15').addEventListener('click', () => {
-  restSecondsLeft += 15;
-  if (restSecondsLeft > 0) timerBar.classList.remove('warn');
-  timerClock.textContent = formatClock(restSecondsLeft);
+  restDurationMs += 15000;
+  // extending the rest means "time's up" hasn't truly happened yet for
+  // this (now longer) period, so it should be able to alert again once
+  // the new, later zero-crossing is actually reached
+  restAlertFired = false;
+  renderTimerTick();
   ensureRunning();
 });
 document.getElementById('timerSkip').addEventListener('click', () => {
   clearInterval(restInterval);
   restInterval = null;
+  restStartTime = null;
   timerBar.classList.remove('active', 'warn');
+});
+
+// Recompute immediately on regaining visibility so the displayed number is
+// never stale/frozen from before the tab was backgrounded. If the timer
+// elapsed while hidden, this is the first moment it's actually "open and
+// in view" again, so the one-shot alert can still fire here — it just
+// never fires while document.visibilityState is 'hidden'.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && restStartTime !== null) {
+    renderTimerTick();
+  }
 });
 
 /* ============ HISTORY ============ */
